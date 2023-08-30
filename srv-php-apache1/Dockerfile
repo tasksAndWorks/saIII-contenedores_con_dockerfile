@@ -2,6 +2,11 @@
 # Usa la imagen base de php:apache-bullseye
 FROM php:apache-bullseye
 
+# Actualiza los repositorios y luego instala el paquete necesario
+RUN apt-get update && apt-get install -y \
+    default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Crea un volumen y establece el directorio de trabajo
 # VOLUME /var/www/html
 WORKDIR /var/www/html
