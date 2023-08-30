@@ -1,0 +1,6 @@
+Realizar los Dockerfile necesarios para crear las imagenes de los 3 trabajos relizados hasta el momento.
+Las imagenes generadas deben contener dentro la mayor cantidad de configuraciónes posible es decir Volumenes - Variables de  Entorno Etc para que a la hora de Desplegar las imagenes con docker run solo se necesite configurar el mapeo de puertos si es necesario.
+
+1 - Repaso Contenedores - Contenedores con Apache y mysql
+2 - Balanceador de carga Grupo X
+3 - Balanceador de carga con sitios nodejs
