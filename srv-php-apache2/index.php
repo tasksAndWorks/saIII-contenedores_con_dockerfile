@@ -29,7 +29,7 @@
     </tr>
 
     <?php
-    $servername = "172.17.0.2";
+    $servername = "172.17.0.3";
     $username = "root";
     $password = "pass";
     $dbname = "prueba";
