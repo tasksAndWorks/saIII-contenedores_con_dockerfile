@@ -3,8 +3,10 @@
 FROM php:apache-bullseye
 
 # Establecemos el directorio de trabajo
+# Establecemos el directorio de trabajo
 WORKDIR /var/www/html
 
+# Copiamos el contenido del directorio local a /var/www/html en el contenedor
 # Copiamos el contenido del directorio local a /var/www/html en el contenedor
 COPY ./ /var/www/html/
 
@@ -21,6 +23,7 @@ RUN NODE_MAJOR=16 && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
 RUN apt-get update && \
+    apt-get install nodejs -y
     apt-get install nodejs -y
 
 # Una vez instalado node, ya podemos hacer la instalación de dependencias para ejecutar nuestro servidor.
