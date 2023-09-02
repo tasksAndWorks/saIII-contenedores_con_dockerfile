@@ -1,57 +1,30 @@
 
-# Usa la imagen base de php:apache-bullseye
+# Utilizamos la imagen base de php:apache-bullseye
 FROM php:apache-bullseye
 
-# Crea un volumen y establece el directorio de trabajo
-# VOLUME /var/www/html
+# Establecemos el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia el contenido del directorio local a /var/www/html en el contenedor
+# Copiamos el contenido del directorio local a /var/www/html en el contenedor
 COPY ./ /var/www/html/
 
-
-# Expone el puerto 80
+# Exponemos el puerto 82. Este puerto debe ser el mismo que se utiliza para crear el servidor y, al crear el contenedor, cuando hacemos el mapeo de puertos, el puerto del contenedor debe ser igual al puerto expuesto aquí.
 EXPOSE 81
 
-# Instala Node.js
-# RUN apt-get update && apt-get install -y curl wget git build-essential && \
-#     curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
-#     apt-get install -y nodejs
+# Instalamos NodeJS (ver pasos en: https://github.com/nodesource/distributions/blob/master/README.md#debian-versions)
+RUN apt-get update
+RUN apt-get install -y ca-certificates curl gnupg
+RUN mkdir -p /etc/apt/keyrings
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+# Elgimos la versión 16
+RUN NODE_MAJOR=16 && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
-# RUN apt-get update && apt-get install -y curl wget git build-essential && \
-#     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash && \
-#     nvm install 16
-
-    # export NVM_DIR="$HOME/.nvm" && \
-    # [ -s "$NVM_DIR/nvm.sh" ] && \. "NVM_DIR/nvm.sh" && \
-    # [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && \
 RUN apt-get update && \
-    apt-get install -y curl wget git build-essential && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-# RUN exit
-RUN nvm install 16 && \
-    npm install
+    apt-get install nodejs -y
 
-# Ejecuta comandos adicionales (por ejemplo, npm i y npm run dev)
-# RUN npm i
-# RUN npm run dev
+# Una vez instalado node, ya podemos hacer la instalación de dependencias para ejecutar nuestro servidor.
+RUN npm install
 
-# Actualiza el sistema y luego instala las dependencias necesarias
-# RUN apt-get update && apt-get install -y \
-#     curl \
-#     wget \
-#     gnupg \
-#     && rm -rf /var/lib/apt/lists/*
-
-# Instala Node.js 16
-# RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-# RUN apt-get install -y nodejs
-
-# RUN curl "https://nodejs.org/dist/latest/node-${VERSION:-$(wget -qO- https://nodejs.org/dist/latest/ | sed -nE 's|.*>node-(.*)\.pkg</a>.*|\1|p')}.pkg" > "$HOME/Downloads/node-latest.pkg" && sudo installer -store -pkg "$HOME/Downloads/node-latest.pkg" -target "/"
-
-# Limpia la lista de paquetes y el caché
-# RUN apt-get clean
-
-# Comando para iniciar el servidor Apache cuando se inicie el contenedor
 CMD ["apache2-foreground"]
-# CMD [ "npm" "run" "dev" ]
+
