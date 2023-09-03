@@ -3,10 +3,8 @@
 FROM php:apache-bullseye
 
 # Establecemos el directorio de trabajo
-# Establecemos el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiamos el contenido del directorio local a /var/www/html en el contenedor
 # Copiamos el contenido del directorio local a /var/www/html en el contenedor
 COPY ./ /var/www/html/
 

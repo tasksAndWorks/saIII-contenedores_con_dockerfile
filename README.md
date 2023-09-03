@@ -1,4 +1,4 @@
-# Introducción
+# <u>Introducción:</u>
 > Este repo fue desarrollado para responder a ciertas cuestiones planteadas por la materia *"Seminario de Actualización III"* del **Instituto Politécnico de Formosa**.
 > Se trata del manejo y administración de servidores ejecutándose en contenedores de **Docker** con un balanceador de carga **HaProxy**, también corriendo en un contenedor. Estos servidores a su vez hacen una consulta a una base de datos **MySql** alojada, otra vez, dentro de un contenedor de Docker.
 
@@ -13,7 +13,7 @@ docker build -t <nombre_imagen> .
 docker run -d -p <puerto_maquina_local>:<puertro_que_expone_el_contenedor> --name <nombre_contendor> <imagen_base>
 ```
 
-# Desarrollo
+# <u>Desarrollo:</u>
 
 ### Creación imagen y contenedor MySQL
 
@@ -24,31 +24,42 @@ FROM mysql:debian
 ENV MYSQL_ROOT_PASSWORD=pass
 ENV MYSQL_DATABASE=prueba
 
-COPY datos.sql /docker-entrypoint-initdb.d/datos.sql
+# Copiamos el fichero datos.sql dentro del directorio `/docker-entrypoint-initdb.d`.
+# Cuando se inicia un contenedor por primera vez, se creará e inicializará una nueva base de datos con el nombre especificado en las variables de configuración proporcionadas.  Además, ejecutará archivos con extensiones .sh, .sql y .sql.gz. que se encuentran en `/docker-entrypoint-initdb.d`
+COPY ./ /docker-entrypoint-initdb.d
 
 EXPOSE 3306
 
 ```
 
-
 ##### Comandos:
 
-* Construcción de la imagen. Situarse en el directorio donde se encuentra el Dockerfile y ejecutar:
+* Construcción de la imagen. Abrimos un CLI y nos situamos en el directorio donde tenemos nuestro Dockerfile para formar la imagen de MySQL. Ejecutamos:
 ```
 docker build -t img-mysql .
 ```
+
+![Creación imagen mysql](./img/imgSql.png)
 
 * Luego crear el contenedor del servidor utilizando esta imagen:
 ```
 docker run -d -p 3306:3306 -v "C:\sqlVol":/var/lib/mysql --name misql img-mysql
 ```
 
+![Creación contenedor MySQL](./img/ctndrMysql.png)
+
+	Vemos que hemos creado el volumen "C:\sqlVol" para que nuestra base de datos no se pierda en caso de agregar nuevos datos y eliminar el contenedor.
+
+**Esperamos uno o dos minutos** para *dejar que el contenedor inicie completamente* y nuestra base de datos esté _lista para realizar conexiones_.
+
+![Docker Desktop Contenedor MySQL](./img/mysqlDockerDesktop.png)
+
 * Ingresamos al contenedor:
 ```
 docker exec -it misql bash
 ```
 
-* Ejecutamos el servidor de NodeJS que se encuentra en el segundo contenedor:
+* Verificamos que efectivamente, nuestra base de datos se haya creado correctamente. Ejecutamos el siguiente comando para realizar consultas a la base de datos:
 ```
 mysql -u root -p
 ```
@@ -58,9 +69,11 @@ E ingresamos nuestra contraseña, en este caso será:
 pass
 ```
 
-Ya que esta es la contraseña que establecimos en nuestro Dockerfile al crear la imagen.
+Ya que esta es la contraseña que establecimos en las variables de entorno de nuestro Dockerfile al crear la imagen.
 
-* Verificamos que nuestra base de datos, y la tabla del fichero ![datos.sql](./mysql/datos.sql) se hayan creado correctamente:
+![Ingreso a contenedor MySQL](./img/ingresoMysql.png)
+
+* Verificamos que nuestra base de datos, y la tabla del fichero ![datos](./mysql/datos.sql) se hayan creado correctamente:
 ```
 show databases;
 ```
@@ -70,8 +83,14 @@ use pueba;
 ```
 
 ```
-show tables;
+SELECT * FROM alumnos;
 ```
+
+![Consultas mysql 1](./img/mysql1.png)
+
+
+![Consultas mysql 2](./img/mysql2.png)
+
 
 * Si no existen tales datos, los agregamos a mano:
 ```
@@ -99,6 +118,7 @@ INSERT INTO alumnos (apellidos, nombres, dni) VALUES
     ('-', 'Brook', 00000000);
 ```
 
+
 ### Creación imágenes y contenedores *PHP:APACHE-BULLSEYE*
 
 #### Primer servidor con PHP
@@ -106,7 +126,8 @@ INSERT INTO alumnos (apellidos, nombres, dni) VALUES
 ##### Dockerfile:
 
 ```
-# Imagen base de php:apache-bullseye
+
+# Usamos la imagen base de php:apache-bullseye
 FROM php:apache-bullseye
 
 # Actualizamos los repositorios y luego instalamos el paquete necesario
@@ -116,14 +137,13 @@ RUN apt-get update
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-enable mysqli
 
-# Crea un volumen y establece el directorio de trabajo
-# VOLUME /var/www/html
+# Establecemos el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia el contenido del directorio local a /var/www/html en el contenedor
+# Copiamos el contenido del directorio local a /var/www/html en el contenedor
 COPY ./ /var/www/html/
 
-# Expone el puerto 80
+# Exponemos el puerto 80
 EXPOSE 80
 
 # Comando para iniciar el servidor Apache cuando se inicie el contenedor
@@ -132,41 +152,63 @@ CMD ["apache2-foreground"]
 ```
 
 ##### Comandos:
-* Para construir una imagen:
-	* Situarse en el directorio donde se encuentra el Dockerfile y ejecutar:
+
+* Antes de crear la imagen, debemos verificar la dirección IP del contenedor que aloja nuestra base de datos, ya que es a esta IP a la que tendrá que apuntar nuestro servidor para que la consulta a la base de datos se haga correctamente. Ver fichero:  ![index.php](./srv-php-apache1/index.php)
+Para conocer la dirección IP del contenedor de la BD ejecutamos:
+```
+docker inspect misql
+```
+
+![Consulta IP MySQL](./img/ipMysql.png)
+
+**Esta dirección IP debe coincidir con la IP configurada en el `index.php` para hacer la conexión a la BD**
+
+![Conexión BD](./img/conexionMysql.png)
+
+* Construcción de la imagen. Abrimos un CLI y nos situamos en el directorio donde tenemos nuestro Dockerfile para formar la imagen de PHP:APACHE-BULSSEYE. Ejecutamos:
 ```
 docker build -t img-srv1 .
 ```
 
+![Imagen servidor apache 1](./img/imgSrv1.png)
+
+
 * Luego crear el contenedor del servidor utilizando esta imagen:
 ```
-docker run -d -p 8097:80 --name SrvD1 img-srv1
+docker run -d -p 8090:80 --name SrvD1 img-srv1
 ```
+
+![Creación contenedor servidor apache 1](./img/contenedor_apache1.png)
+
+* Verificamos el funcionamiento del servidor y su correcta conexión al contenedor de BD ingresando con cualquier navegador a:
+```
+http://localhost:8090/
+```
+
+![Prueba funcionamiento contenedor servidor apache 1](./img/prueba-srv1Apache.png)
 
 
 #### Segundo servidor con PHP
 ##### Dockerfile:
 
 ```
-
-# Imagen base de php:apache-bullseye
+  
+# Usamos la imagen base de php:apache-bullseye
 FROM php:apache-bullseye
 
-# Actualizamos los repositorios y luego instalamos el paquete necesario
-
+# Actualizamos los repositorios y luego instala el paquete necesario
 RUN apt-get update
 # RUN apt-get install -y libmysqli-dev
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-enable mysqli
 
-# Crea un volumen y establece el directorio de trabajo
-# VOLUME /var/www/html
+# Establecemos el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia el contenido del directorio local a /var/www/html en el contenedor
+# Copiamos el contenido del directorio local a /var/www/html en el contenedor
 COPY ./ /var/www/html/
 
-# Expone el puerto 80
+# Exponemos el puerto 80
 EXPOSE 80
 
 # Comando para iniciar el servidor Apache cuando se inicie el contenedor
@@ -177,24 +219,48 @@ CMD ["apache2-foreground"]
 
 
 ##### Comandos:
-* Para construir una imagen:
-	* Situarse en el directorio donde se encuentra el Dockerfile y ejecutar:
-	```
-	docker build -t img-srv2 .
-	```
-    
+
+
+* Antes de crear la imagen, debemos verificar la dirección IP del contenedor que aloja nuestra base de datos, ya que es a esta IP a la que tendrá que apuntar nuestro servidor para que la consulta a la base de datos se haga correctamente. Ver fichero:  ![index.php](./srv-php-apache2/index.php)
+Para conocer la dirección IP del contenedor de la BD ejecutamos:
+```
+docker inspect misql
+```
+
+![Consulta IP MySQL](./img/ipMysql.png)
+
+**Esta dirección IP debe coincidir con la IP configurada en el `index.php` para hacer la conexión a la BD**
+
+![Conexión BD](./img/conexionMysql.png)
+
+* Construcción de la imagen. Abrimos un CLI y nos situamos en el directorio donde tenemos nuestro Dockerfile para formar la imagen de PHP:APACHE-BULSSEYE. Ejecutamos:
+```
+docker build -t img-srv2 .
+```
+
+![Imagen servidor apache 1](./img/imgSrv2.png)
+
 * Luego crear el contenedor del servidor utilizando esta imagen:
 	```
-	docker run -d -p 8095:80 --name SrvD2 img-srv2
+	docker run -d -p 8091:80 --name SrvD2 img-srv2
 	```
 
+![Creación contenedor servidor apache 1](./img/contenedor_apache2.png)
 
+
+* Verificamos el funcionamiento del servidor y su correcta conexión al contenedor de BD ingresando con cualquier navegador a:
+```
+http://localhost:8091/
+```
+
+![Prueba funcionamiento contenedor servidor apache 1](./img/prueba-srv2Apache.png)
 
 ### Creación imágenes y contenedores *PHP:APACHE-BULLSEYE + **NODEJS***
 
 #### Primer servidor con NodeJS
 
 ##### Dockerfile:
+
 ```
 # Utilizamos la imagen base de php:apache-bullseye
 
@@ -227,22 +293,43 @@ RUN npm install
 CMD ["apache2-foreground"]
 ```
 
+Aquí seguimos la instalación de Node de acuerdo a los pasos dados en: https://github.com/nodesource/distributions/blob/master/README.md#debian-versions.
+Se llegó a este link leyendo la documentación oficial(https://nodejs.org/es/download/package-manager).
 
 ##### Comandos:
 
-* Construcción de la imagen. Situarse en el directorio donde se encuentra el Dockerfile y ejecutar:
+* Antes de crear la imagen, debemos verificar la dirección IP del contenedor que aloja nuestra base de datos, ya que es a esta IP a la que tendrá que apuntar nuestro servidor para que la consulta a la base de datos se haga correctamente. Ver fichero:  ![server.js](./srv-php-apache-node1/server.js)
+Para conocer la dirección IP del contenedor de la BD ejecutamos:
+```
+docker inspect misql
+```
+
+![Consulta IP MySQL](./img/ipMysql.png)
+
+**Esta dirección IP debe coincidir con la IP configurada en el `server.js` para hacer la conexión a la BD**
+
+![Conexión BD](./img/conexionNodeMysql.png)
+
+* Construcción de la imagen. Abrimos un CLI y nos situamos en el directorio donde tenemos nuestro Dockerfile para formar la imagen de PHP:APACHE-BULSSEYE con NodeJS instalado en su interior. Ejecutamos:
+
 ```
 docker build -t img-srv1-node .
 ```
+
+![Creación imagen con Node 1](./img/img_node1.png)
+
 * Luego crear el contenedor del servidor utilizando esta imagen:
 ```
-docker run -d -p 8090:81 --name SrvD1Node img-srv1-node
+docker run -d -p 8092:81 --name SrvD1Node img-srv1-node
 ```
-	- Aquí el puerto del contenedor que debemos mapear es el mismo que se utiliza en el código .js que crea el servidor. Ver fichero ![server.js]()
+
+![Creación contenedor con Node 1](./img/contenedor-node1.png)
+
+Aquí el puerto del contenedor que debemos mapear es el mismo que se utiliza en el código .js que crea el servidor. Ver fichero ![server.js](./srv-php-apache-node1/server.js)
 
 * Ingresamos al contenedor:
 ```
-docker exec -it SrvD2Node bash
+docker exec -it SrvD1Node bash
 ```
 
 * Ejecutamos el servidor de NodeJS que se encuentra en el segundo contenedor:
@@ -250,9 +337,21 @@ docker exec -it SrvD2Node bash
 npm run dev
 ```
 
+![Inicio de contenedor con NodeJS 1](./img/startContenedorNode1.png)
+
+* Verificamos el funcionamiento del servidor y su correcta conexión al contenedor de BD ingresando con cualquier navegador a:
+```
+http://localhost:8092/
+```
+
+![Prueba funcionamiento contenedor servidor NodeJS 1](./img/prueba-srv1Node.png)
+
+
 #### Segundo servidor con NodeJS
 ##### Dockerfile:
+
 ```
+  
 
 # Utilizamos la imagen base de php:apache-bullseye
 FROM php:apache-bullseye
@@ -289,15 +388,37 @@ Aquí seguimos la instalación de Node de acuerdo a los pasos dados en: https://
 Se llegó a este link leyendo la documentación oficial(https://nodejs.org/es/download/package-manager).
 
 ##### Comandos:
-* Construcción de la imagen. Situarse en el directorio donde se encuentra el Dockerfile y ejecutar:
+
+* Antes de crear la imagen, debemos verificar la dirección IP del contenedor que aloja nuestra base de datos, ya que es a esta IP a la que tendrá que apuntar nuestro servidor para que la consulta a la base de datos se haga correctamente. Ver fichero:  ![server.js](./srv-php-apache-node2/server.js)
+
+Para conocer la dirección IP del contenedor de la BD ejecutamos:
+```
+docker inspect misql
+```
+
+![Consulta IP MySQL](./img/ipMysql.png)
+
+**Esta dirección IP debe coincidir con la IP configurada en el `server.js` para hacer la conexión a la BD**
+
+![Conexión BD](./img/conexionNodeMysql.png)
+
+
+* Construcción de la imagen. Abrimos un CLI y nos situamos en el directorio donde tenemos nuestro Dockerfile para formar la imagen de PHP:APACHE-BULSSEYE con NodeJS instalado en su interior. Ejecutamos:
 ```
 docker build -t img-srv2-node .
 ```
+
+![Creación imagen con Node 2](./img/img_node2.png)
+
 * Luego crear el contenedor del servidor utilizando esta imagen:
 ```
-docker run -d -p 8091:82 --name SrvD2Node img-srv2-node
+docker run -d -p 8093:82 --name SrvD2Node img-srv2-node
 ```
-	- Aquí el puerto del contenedor que debemos mapear es el mismo que se utiliza en el código .js que crea el servidor. Ver fichero ![server.js]()
+
+
+![Creación contenedor con Node 2](./img/contenedor-node2.png)
+
+Aquí el puerto del contenedor que debemos mapear es el mismo que se utiliza en el código .js que crea el servidor. Ver fichero ![server.js](./srv-php-apache-node2/server.js)
 
 * Ingresamos al contenedor:
 ```
@@ -310,71 +431,84 @@ npm run dev
 ```
 
 
-# Procedimientos
+![Inicio de contenedor con NodeJS 2](./img/startContenedorNode2.png)
 
-A continuación daremos una lista de pasos para ejecutar y probar el funcionamiento del balanceador y la conexión de los servidores (realizados con NodeJS corriendo dentro de los contenedores de php:apache-bullseye) con la base de datos (creada en un contenedor de mysql):
-
-1. Creamos la imagen del servidor con Node 1
-	- Nos situamos en el directorio donde tenemos nuestro Dockerfile
+* Verificamos el funcionamiento del servidor y su correcta conexión al contenedor de BD ingresando con cualquier navegador a:
 ```
-docker build -t img-srv-node1 .
+http://localhost:8093/
 ```
 
-![Creación imagen mysql](./img/imgSql.png)
+![Prueba funcionamiento contenedor servidor NodeJS 2](./img/prueba-srv2Node.png)
 
-2. Creamos el contenedor del servidor con Node 1
-```
-docker run -d -p 8090:81 --name SrvD1Node img-srv-node1
-```
+### Creación imagen y contenedor *HAPROXY*:
 
-3. Inspeccionamos la Ip del contendor
+##### Dockerfile:
 ```
-docker inspect SrvD1Node
-```
+FROM haproxy:latest
 
-4. Creamos la imagen del servidor con Node 2
-	- Nos situamos en el directorio donde tenemos nuestro Dockerfile
-```
-docker build -t img-srv-node2 .
+WORKDIR /usr/local/etc/haproxy
+
+COPY ./ /usr/local/etc/haproxy
+
+EXPOSE 80
+
 ```
 
-5. Creamos el contenedor del servidor con Node 2
+##### Comandos:
+
+* Antes de crear la imagen, debemos verificar las direcciones IP's de los contenedores que alojan los distintos servidores que usaremos para "balancear", ya que es a estas IP a la que tendrá que apuntar nuestro balanceador en su configuración. Ver fichero:  ![haproxy.cfg](./balancer-haproxy/haproxy.cfg)
+
+Para conocer la dirección IP de un contenedor ejecutamos:
 ```
-docker run -d -p 8091:82 --name SrvD2Node img-srv-node2
+docker inspect <tag_contenedore>
 ```
 
-6. Inspeccionamos la Ip del contendor
-```
-docker inspect SrvD2Node
-```
+En nuestro caso tenemos:
+* SrvD1: "172.17.0.3"
+* SrvD2: "172.17.0.4"
+* SrvD1Node: "172.17.0.5"
+* SrvD2Node: "172.17.0.6"
 
-7. Creamos la imagen del balanceador
-	- Nos situamos en el directorio donde tenemos nuestro Dockerfile
+**Estas direcciones IP deben coincidir con las IP configuradas en el `haproxy.cfg` para  el correcto funcionamiento del balanceador**
+
+![Conexión Balanceador y Servidores](./img/conexionBalServ.png)
+
+
+* Construcción de la imagen. Abrimos un CLI y nos situamos en el directorio donde tenemos nuestro Dockerfile para formar la imagen de Haproxy. Ejecutamos:
 ```
 docker build -t img-bal .
 ```
 
-8. Creamos el contenedor del balanceador
+![Creación imagen haproxy](./img/imgHaproxy.png)
+
+
+* Creamos el contenedor del balanceador
 ```
 docker run -d -p 8085:80 --name Bal img-bal
 ```
 
-10. Ingresamos al contenedor del servidor con Node 1
+
+![Creación contenedor MySQL](./img/ctndrHaproxy.png)
+
+**Esperamos uno o dos minutos** para *dejar que el contenedor inicie completamente*.
+
+* Verificamos el funcionamiento del balanceador y su correcto comportamiento ingresando con cualquier navegador a:
 ```
-docker exec -it SrvD1Node bash
+http://localhost:8085/
 ```
 
-12. Levantamos el servidor
-```
-npm run dev
-```
+**Asegurarse antes de tener todos los contenedores ejecutándose y, en el caso de los servidores con NodeJS, que todos los servidores estén en funcionamiento**
 
-13. Ingresamos al contenedor del servidor con Node 2
-```
-docker exec -it SrvD2Node bash
-```
+![Prueba funcionamiento balanceador servidor Apache 1](./img/prueba-balancer-apache1.png)
 
-14. Levantamos el servidor
-```
-npm run dev
-```
+
+
+![Prueba funcionamiento balanceador servidor Apache 2](./img/prueba-balancer-apache2.png)
+
+
+![Prueba funcionamiento balanceador servidor Node 1](./img/prueba-balancer-node1.png)
+
+
+
+![Prueba funcionamiento balanceador servidor Node 2](./img/prueba-balancer-node2.png)
+
