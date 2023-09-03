@@ -24,11 +24,12 @@ FROM mysql:debian
 ENV MYSQL_ROOT_PASSWORD=pass
 ENV MYSQL_DATABASE=prueba
 
-COPY datos.sql /docker-endpoint-initdb.d/datos.sql
+COPY datos.sql /docker-entrypoint-initdb.d/datos.sql
 
 EXPOSE 3306
 
 ```
+
 
 ##### Comandos:
 
@@ -318,6 +319,8 @@ A continuación daremos una lista de pasos para ejecutar y probar el funcionamie
 ```
 docker build -t img-srv-node1 .
 ```
+
+![Creación imagen mysql](./img/imgSql.png)
 
 2. Creamos el contenedor del servidor con Node 1
 ```
