@@ -1,5 +1,6 @@
 # <u>Introducción:</u>
 > Este repo fue desarrollado para responder a ciertas cuestiones planteadas por la materia *"Seminario de Actualización III"* del **Instituto Politécnico de Formosa**.
+>
 > Se trata del manejo y administración de servidores ejecutándose en contenedores de **Docker** con un balanceador de carga **HaProxy**, también corriendo en un contenedor. Estos servidores a su vez hacen una consulta a una base de datos **MySql** alojada, otra vez, dentro de un contenedor de Docker.
 
 La parte principal del trabajo se basa en la ejecución de los siguientes dos comandos:
@@ -12,6 +13,27 @@ docker build -t <nombre_imagen> .
 ```
 docker run -d -p <puerto_maquina_local>:<puertro_que_expone_el_contenedor> --name <nombre_contendor> <imagen_base>
 ```
+
+# <u>Características:</u>
+
+
+**SO: Windows 10**.
+
+# <u>Requerimientos:</u>
+
+
+* Tener instalado **Docker Desktop**
+* Tener instalado **Git**
+
+# <u>Usos:</u>
+
+* Para utilizar este proyecto,  abrimos un CLI y nos dirigimos al directorio del sistema donde deseamos guardarlo. Ejecutamos el siguiente comando:
+```
+git clone https://github.com/tasksAndWorks/saIII-contenedores_con_dockerfile.git
+```
+
+* Seguimos los pasos que se describen abajo.
+
 
 # <u>Desarrollo:</u>
 
